@@ -1,0 +1,56 @@
+# AI Adoption Opportunity Project
+## AI-assisted Strategy Monitoring in Public Sector / Federal Agencies
+
+**Bootcamp:** Ironhack AI Consulting Bootcamp — Project 5
+**Week:** 8
+**Sector:** Public Sector / Bundesagentur
+**Company Size:** Large (200+ employees)
+
+---
+
+## Business Question
+> "Can AI help a federal agency monitor strategy progress continuously — instead of flying blind until the annual review?"
+
+## Use Case
+AI-supported KPI monitoring layer that aggregates departmental inputs, detects deviations from strategic targets, and delivers automated early-warning signals to leadership.
+
+## Project Structure
+```
+ai-adoption-opportunity-project/
+├── data/
+│   ├── raw/                    # IBM HR Analytics Dataset (Kaggle)
+│   └── processed/              # Cleaned data for dashboard
+├── research/
+│   ├── market_research.md      # AI adoption signals, sector trends, sources
+│   ├── opportunities_risks.md  # Opportunity, risk, and hype mapping
+│   └── use_case_discovery.md   # Use case selection and justification
+├── dashboard/
+│   └── dashboard.py            # Streamlit/Plotly dashboard
+├── implementation/
+│   └── solution_proposal.md    # Recommended AI adoption approach
+├── cost_estimation/
+│   ├── cost_analysis.md        # Pilot + rollout cost estimates
+│   └── timeline_estimate.md    # Phased timeline
+└── README.md
+```
+
+## Setup
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+streamlit run dashboard/dashboard.py
+```
+
+## Dataset
+IBM HR Analytics Employee Attrition (Kaggle)
+Used as structural proxy for organizational performance variance.
+Limitation: US-based, synthetic — documented in use_case_discovery.md
+
+## Key Deliverables
+- [x] Use case discovery and justification
+- [x] Market research and adoption signals
+- [x] Opportunity, risk, and hype mapping
+- [x] Solution proposal
+- [x] Cost and timeline estimates
+- [ ] Dashboard (next step)

@@ -1,0 +1,712 @@
+<!--
+AI Adoption dashboard for public sector strategy analysis.
+Includes:
+- responsive visual style with custom CSS variables and layout sections
+- topbar with branding and metadata
+- hero section with headline, subtext and pilot readiness / investment badges
+- KPI strip displaying attrition, overtime risk, critical window and training effect
+- main grid with cards for department, tenure, overtime, training charts and evidence table
+- readiness assessment cards and market benchmark chart
+- recommendation panel with pilot guidance and risks
+- footer note about data provenance and context
+
+Chart rendering is handled by Plotly.js with consistent base styling for bar and line charts.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Adoption in the Public Sector — dena Strategy Analysis</title>
+<script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue:      #1200FF;
+    --blue-mid:  #3B1ED4;
+    --orange:    #F4621F;
+    --orange-lt: #F9884A;
+    --red:       #D93B2B;
+    --lavender:  #EAE8F5;
+    --lavender2: #F3F2FA;
+    --white:     #FFFFFF;
+    --black:     #0D0D0D;
+    --gray:      #6B6B7B;
+    --gray-lt:   #C8C7D4;
+    --border:    #DDDCE8;
+    --text:      #1A1A2E;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--lavender2);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ─── TOP BAR ─── */
+  .topbar {
+    background: var(--white);
+    border-bottom: 4px solid;
+    border-image: linear-gradient(90deg, var(--blue) 0%, var(--blue-mid) 40%, var(--orange) 70%, var(--red) 100%) 1;
+    padding: 0 48px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .dena-logo {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--black);
+  }
+
+  .topbar-meta {
+    font-size: 11px;
+    color: var(--gray);
+    text-align: right;
+    line-height: 1.6;
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    background: var(--white);
+    padding: 40px 48px 36px;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 48px;
+    align-items: center;
+  }
+
+  .hero-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-bottom: 12px;
+  }
+
+  .hero-title {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--black);
+    letter-spacing: -0.02em;
+    max-width: 580px;
+  }
+
+  .hero-title em {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--blue), var(--orange));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    margin-top: 14px;
+    font-size: 14px;
+    color: var(--gray);
+    max-width: 520px;
+    line-height: 1.7;
+  }
+
+  .hero-badge {
+    background: var(--lavender);
+    border: 1px solid var(--border);
+    padding: 20px 24px;
+    min-width: 200px;
+    text-align: center;
+  }
+
+  .hero-badge-num {
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--blue);
+    line-height: 1;
+  }
+
+  .hero-badge-label {
+    font-size: 11px;
+    color: var(--gray);
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ─── KPI STRIP ─── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .kpi {
+    padding: 24px 28px;
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+
+  .kpi:last-child { border-right: none; }
+
+  .kpi-accent {
+    height: 3px;
+    width: 40px;
+    margin-bottom: 14px;
+    border-radius: 2px;
+  }
+
+  .kpi-value {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gray);
+    margin-bottom: 4px;
+  }
+
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--gray);
+  }
+
+  /* ─── MAIN GRID ─── */
+  .main {
+    padding: 32px 48px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+  }
+
+  .card.wide { grid-column: 1 / -1; }
+
+  .card-header {
+    padding: 18px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .card-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--black);
+  }
+
+  .tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .tag-blue   { background: rgba(18,0,255,0.08); color: var(--blue); }
+  .tag-orange { background: rgba(244,98,31,0.1);  color: var(--orange); }
+  .tag-green  { background: rgba(0,160,80,0.1);   color: #00873F; }
+  .tag-red    { background: rgba(217,59,43,0.1);   color: var(--red); }
+  .tag-gray   { background: var(--lavender); color: var(--gray); }
+
+  .card-body { padding: 20px 24px; }
+
+  /* ─── HYPE TABLE ─── */
+  .hype-table { width: 100%; border-collapse: collapse; }
+
+  .hype-table tr { border-bottom: 1px solid var(--border); }
+  .hype-table tr:last-child { border-bottom: none; }
+  .hype-table tr:hover { background: var(--lavender2); }
+
+  .hype-table td {
+    padding: 13px 10px;
+    font-size: 12.5px;
+    vertical-align: middle;
+  }
+
+  .hype-table td:first-child {
+    font-weight: 500;
+    color: var(--black);
+    width: 36%;
+    padding-right: 20px;
+  }
+
+  .hype-table td:nth-child(2) {
+    color: var(--gray);
+    font-size: 11px;
+    width: 18%;
+  }
+
+  .verdict {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .v-false { background: rgba(217,59,43,0.1); color: var(--red); }
+  .v-warn  { background: rgba(244,98,31,0.1); color: var(--orange); }
+  .v-true  { background: rgba(0,135,63,0.1);  color: #00873F; }
+
+  /* ─── READINESS ─── */
+  .readiness-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .r-item {
+    background: var(--lavender2);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+  }
+
+  .r-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gray);
+    margin-bottom: 10px;
+  }
+
+  .r-bar-track {
+    height: 5px;
+    background: var(--border);
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+
+  .r-bar-fill { height: 100%; }
+
+  .r-score {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--black);
+  }
+
+  .r-score span {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--gray);
+  }
+
+  .r-item.highlight {
+    background: var(--lavender);
+    border-color: var(--blue);
+    border-left: 3px solid var(--blue);
+  }
+
+  /* ─── RECOMMENDATION ─── */
+  .rec {
+    grid-column: 1 / -1;
+    background: var(--blue);
+    color: var(--white);
+    padding: 36px 40px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap: 40px;
+  }
+
+  .rec-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 12px;
+  }
+
+  .rec-headline {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+  }
+
+  .rec-body {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.7;
+  }
+
+  .rec-body strong { color: var(--white); font-weight: 600; }
+
+  .rec-divider {
+    width: 1px;
+    background: rgba(255,255,255,0.15);
+    display: none;
+  }
+
+  .rec-pill {
+    display: inline-block;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+    margin-top: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 16px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--gray);
+  }
+
+  .footer strong { color: var(--orange); }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="dena-logo">dena</div>
+  <div class="topbar-meta">
+    AI Adoption Analysis · Public Sector<br>
+    Prepared for: Cleo, CEO · Ironhack AI Consulting Bootcamp
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div>
+    <div class="hero-eyebrow">Strategic Briefing · AI &amp; Organisational Development</div>
+    <div class="hero-title">Is AI-assisted<br><em>Strategy Monitoring</em><br>worth it for Federal Agencies?</div>
+    <div class="hero-sub">
+      Market analysis, data evidence and recommendation for continuous KPI monitoring — replacing the annual reporting cycle.
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    <div class="hero-badge">
+      <div class="hero-badge-num">2.8<span style="font-size:20px">/5</span></div>
+      <div class="hero-badge-label">Pilot Readiness</div>
+    </div>
+    <div class="hero-badge" style="background:var(--blue);border-color:var(--blue);">
+      <div class="hero-badge-num" style="color:white;font-size:32px;">€19–31k</div>
+      <div class="hero-badge-label" style="color:rgba(255,255,255,0.7);">Pilot Investment</div>
+    </div>
+  </div>
+</div>
+
+<!-- KPI STRIP -->
+<div class="kpi-strip">
+  <div class="kpi">
+    <div class="kpi-accent" style="background:var(--red)"></div>
+    <div class="kpi-label">Overall Attrition</div>
+    <div class="kpi-value" style="color:var(--red)">16.1%</div>
+    <div class="kpi-sub">237 of 1,470 employees — Proxy: Org instability</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-accent" style="background:var(--orange)"></div>
+    <div class="kpi-label">Overtime Risk</div>
+    <div class="kpi-value" style="color:var(--orange)">3×</div>
+    <div class="kpi-sub">30.5% vs. 10.4% without overtime</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-accent" style="background:var(--blue)"></div>
+    <div class="kpi-label">Critical Time Window</div>
+    <div class="kpi-value" style="color:var(--blue)">0–2 yrs</div>
+    <div class="kpi-sub">28.9% attrition — highest cohort</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-accent" style="background:#00873F"></div>
+    <div class="kpi-label">Training Effect</div>
+    <div class="kpi-value" style="color:#00873F">−18pp</div>
+    <div class="kpi-sub">0 vs. 6 trainings p.a.: 27.8% → 9.2%</div>
+  </div>
+</div>
+
+<!-- CHARTS -->
+<div class="main">
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Attrition by Department</span>
+      <span class="tag tag-blue">Proxy: Strategy Execution Variance</span>
+    </div>
+    <div class="card-body">
+      <div id="chart-dept"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Attrition by Tenure</span>
+      <span class="tag tag-orange">Early Warning Signal</span>
+    </div>
+    <div class="card-body">
+      <div id="chart-tenure"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Overtime vs. Attrition Risk</span>
+      <span class="tag tag-red">Change Resistance Proxy</span>
+    </div>
+    <div class="card-body">
+      <div id="chart-overtime"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Training Frequency vs. Attrition</span>
+      <span class="tag tag-green">Strongest Lever</span>
+    </div>
+    <div class="card-body">
+      <div id="chart-training"></div>
+    </div>
+  </div>
+
+  <!-- HYPE TABLE -->
+  <div class="card wide">
+    <div class="card-header">
+      <span class="card-title">Hype vs. Evidence — AI Strategy Monitoring</span>
+      <span class="tag tag-gray">Critical Assessment</span>
+    </div>
+    <div class="card-body">
+      <table class="hype-table">
+        <tr>
+          <td>AI accelerates strategy execution by a factor of 3</td>
+          <td>Vendor / McKinsey</td>
+          <td><span class="verdict v-warn">⚠ Übertrieben</span></td>
+          <td style="font-size:12px;color:var(--gray)">Depends entirely on data readiness. In German public sector: unstandardised, legacy-heavy. No independent RCT evidence.</td>
+        </tr>
+        <tr>
+          <td>AI replaces strategic planning &amp; decision-making</td>
+          <td>Medien / Vendor</td>
+          <td><span class="verdict v-false">✗ Falsch</span></td>
+          <td style="font-size:12px;color:var(--gray)">AI is a reporting layer, not a decision engine. Political judgment and stakeholder management remain human.</td>
+        </tr>
+        <tr>
+          <td>AI adoption in public sector is growing</td>
+          <td>Gartner 2024</td>
+          <td><span class="verdict v-true">✓ Belegt</span></td>
+          <td style="font-size:12px;color:var(--gray)">67% of gov orgs piloting AI by 2025 (up from 34% in 2022). EU AI Act and Digitalstrategie Bundesregierung drive this.</td>
+        </tr>
+        <tr>
+          <td>Strategy monitoring AI shows clear ROI</td>
+          <td>Deloitte Public Sector</td>
+          <td><span class="verdict v-warn">⚠ Teilweise</span></td>
+          <td style="font-size:12px;color:var(--gray)">ROI proven for reporting efficiency (−35% in Hamburg pilot). ROI for decision quality: not independently measured.</td>
+        </tr>
+        <tr>
+          <td>Implementation takes 3–6 months</td>
+          <td>Vendor-Schätzungen</td>
+          <td><span class="verdict v-warn">⚠ Optimistisch</span></td>
+          <td style="font-size:12px;color:var(--gray)">Data readiness alone: 2–4 months. BSI compliance review: +4–8 weeks. Realistic: 6–12 months to pilot launch.</td>
+        </tr>
+        <tr>
+          <td>Training significantly reduces attrition</td>
+          <td>IBM Dataset (diese Analyse)</td>
+          <td><span class="verdict v-true">✓ Belegt</span></td>
+          <td style="font-size:12px;color:var(--gray)">0 trainings: 27.8% attrition. 6 trainings: 9.2%. Strongest modifiable factor in dataset — directly relevant for AI rollout planning.</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- READINESS -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">AI Adoption Readiness — Federal Agency (Large)</span>
+      <span class="tag tag-blue">Pilot Assessment</span>
+    </div>
+    <div class="card-body">
+      <div class="readiness-grid">
+        <div class="r-item">
+          <div class="r-label">Data Availability</div>
+          <div class="r-bar-track"><div class="r-bar-fill" style="width:40%;background:var(--red)"></div></div>
+          <div class="r-score">2/5 <span>KPIs exist, not standardised</span></div>
+        </div>
+        <div class="r-item">
+          <div class="r-label">Technical Infrastructure</div>
+          <div class="r-bar-track"><div class="r-bar-fill" style="width:60%;background:var(--orange)"></div></div>
+          <div class="r-score">3/5 <span>Legacy-heavy</span></div>
+        </div>
+        <div class="r-item">
+          <div class="r-label">Leadership Buy-in</div>
+          <div class="r-bar-track"><div class="r-bar-fill" style="width:80%;background:#00873F"></div></div>
+          <div class="r-score">4/5 <span>Political digitisation pressure</span></div>
+        </div>
+        <div class="r-item">
+          <div class="r-label">Change Capacity</div>
+          <div class="r-bar-track"><div class="r-bar-fill" style="width:40%;background:var(--red)"></div></div>
+          <div class="r-score">2/5 <span>High workload, low bandwidth</span></div>
+        </div>
+        <div class="r-item">
+          <div class="r-label">Budget Availability</div>
+          <div class="r-bar-track"><div class="r-bar-fill" style="width:60%;background:var(--orange)"></div></div>
+          <div class="r-score">3/5 <span>EU digitisation funds available</span></div>
+        </div>
+        <div class="r-item highlight">
+          <div class="r-label">Overall Readiness</div>
+          <div class="r-bar-track"><div class="r-bar-fill" style="width:56%;background:var(--blue)"></div></div>
+          <div class="r-score">2.8/5 <span>Pilot-ready — not rollout-ready yet</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARKET BENCHMARK -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Market Benchmark: AI in Public Sector</span>
+      <span class="tag tag-green">Market Signal</span>
+    </div>
+    <div class="card-body">
+      <div id="chart-adoption"></div>
+    </div>
+  </div>
+
+  <!-- RECOMMENDATION -->
+  <div class="rec">
+    <div>
+      <div class="rec-section-title">Recommendation to Cleo</div>
+      <div class="rec-headline">Pilot yes.<br>Rollout only after data proof.</div>
+      <div class="rec-body">
+        Die Technologie ist bereit. Das Market Signal ist klar. Die Unbekannte ist Ihre Datenlage — und die lässt sich nur von innen heraus beantworten.
+      </div>
+      <div class="rec-pill">€19–31k · 3 Months · 1 Department</div>
+    </div>
+    <div>
+      <div class="rec-section-title">Pilot Scope</div>
+      <div class="rec-body">
+        <strong>1 Department · 3–5 KPIs · 3 Months</strong><br><br>
+        Success criterion: leadership spends <strong>50% less time</strong> on manual report consolidation.<br><br>
+        Build vs. Buy: <strong>Buy first</strong> — Perdoo or Power BI Copilot. Custom build only if off-the-shelf fails.
+      </div>
+    </div>
+    <div>
+      <div class="rec-section-title">The Real Risk</div>
+      <div class="rec-body">
+        Not the technology. <strong>Change resistance and data quality</strong> are the two failure modes — both addressable with the right pilot design.<br><br>
+        Training is the strongest lever: <strong>−18pp attrition</strong> between 0 and 6 annual trainings. Applies directly to AI rollout planning.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div>AI Adoption Analysis · Ironhack AI Consulting Bootcamp · Project 5 · Public Sector / Federal Agency</div>
+  <div><strong>Note:</strong> IBM HR Analytics dataset is US-based and synthetic — used as structural analog · No public German federal agency KPI data available</div>
+</div>
+
+<script>
+const CFG = { displayModeBar: false, responsive: true };
+
+const BASE = {
+  paper_bgcolor: 'transparent',
+  plot_bgcolor: 'transparent',
+  font: { family: 'Space Grotesk, sans-serif', color: '#6B6B7B', size: 11 },
+  margin: { t: 8, b: 36, l: 44, r: 16 },
+  xaxis: { gridcolor: '#DDDCE8', zerolinecolor: '#DDDCE8', tickfont: { size: 11 } },
+  yaxis: { gridcolor: '#DDDCE8', zerolinecolor: '#DDDCE8', tickfont: { size: 11 } },
+  showlegend: false,
+  height: 220
+};
+
+// Dept
+Plotly.newPlot('chart-dept', [{
+  type: 'bar', x: ['Human Resources','Research & Dev','Sales'],
+  y: [19.0, 13.8, 20.6],
+  marker: { color: ['#1200FF','#1200FF','#D93B2B'], opacity: 0.9 },
+  text: ['19.0%','13.8%','20.6%'], textposition: 'outside',
+  textfont: { color: '#1A1A2E', size: 12, family: 'Space Grotesk' }
+}], { ...BASE, yaxis: { ...BASE.yaxis, title: 'Attrition %', range: [0,28] } }, CFG);
+
+// Tenure
+Plotly.newPlot('chart-tenure', [{
+  type: 'scatter', mode: 'lines+markers',
+  x: ['0–2 yrs','3–5 yrs','6–10 yrs','11–20 yrs','20+ yrs'],
+  y: [28.9, 13.8, 12.3, 6.7, 12.1],
+  line: { color: '#F4621F', width: 2.5 },
+  marker: { color: '#F4621F', size: 8, line: { color: '#fff', width: 2 } },
+  fill: 'tozeroy', fillcolor: 'rgba(244,98,31,0.08)'
+}], { ...BASE, yaxis: { ...BASE.yaxis, title: 'Attrition %', range: [0,36] } }, CFG);
+
+// Overtime
+Plotly.newPlot('chart-overtime', [{
+  type: 'bar', x: ['No Overtime','With Overtime'],
+  y: [10.4, 30.5],
+  marker: { color: ['#00873F','#D93B2B'], opacity: 0.9 },
+  text: ['10.4%','30.5%'], textposition: 'outside',
+  textfont: { color: '#1A1A2E', size: 13, family: 'Space Grotesk' }
+}], { ...BASE, yaxis: { ...BASE.yaxis, title: 'Attrition %', range: [0,40] } }, CFG);
+
+// Training
+Plotly.newPlot('chart-training', [{
+  type: 'bar', x: [0,1,2,3,4,5,6],
+  y: [27.8,12.7,17.9,14.1,21.1,11.8,9.2],
+  marker: {
+    color: [27.8,12.7,17.9,14.1,21.1,11.8,9.2],
+    colorscale: [[0,'#00873F'],[0.5,'#F4621F'],[1,'#D93B2B']],
+    reversescale: true, opacity: 0.9
+  },
+  text: ['27.8%','12.7%','17.9%','14.1%','21.1%','11.8%','9.2%'],
+  textposition: 'outside',
+  textfont: { color: '#6B6B7B', size: 10 }
+}], {
+  ...BASE,
+  xaxis: { ...BASE.xaxis, title: 'Trainings per year', dtick: 1 },
+  yaxis: { ...BASE.yaxis, title: 'Attrition %', range: [0,36] }
+}, CFG);
+
+// Benchmark
+Plotly.newPlot('chart-adoption', [{
+  type: 'bar', orientation: 'h',
+  y: ['Gov orgs with AI pilot (2022)','Gov orgs with AI pilot (2025)','Strategy monitoring top-3 use case','Hamburg pilot: reporting time saved'],
+  x: [34, 67, 72, 35],
+  marker: { color: ['#DDDCE8','#1200FF','#1200FF','#00873F'], opacity: 0.9 },
+  text: ['34%','67%','72%','−35%'], textposition: 'outside',
+  textfont: { color: '#1A1A2E', size: 11, family: 'Space Grotesk' }
+}], {
+  ...BASE,
+  margin: { t: 8, b: 36, l: 210, r: 60 },
+  xaxis: { ...BASE.xaxis, title: '%', range: [0,90] },
+  yaxis: { ...BASE.yaxis, tickfont: { size: 10 } },
+  height: 220
+}, CFG);
+</script>
+</body>
+</html>
