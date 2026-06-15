@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime
+import os
 
 st.set_page_config(page_title="AI Adoption Readiness Dashboard", layout="wide", initial_sidebar_state="collapsed")
 
@@ -49,7 +50,10 @@ st.markdown("""
 # Load data
 @st.cache_data
 def load_data():
-    df = pd.read_csv('../data/raw/hr_attrition_cleaned.csv')
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(script_dir)
+    data_path = os.path.join(parent_dir, 'data', 'raw', 'hr_attrition_cleaned.csv')
+    df = pd.read_csv(data_path)
     return df
 
 df = load_data()
